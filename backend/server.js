@@ -23,30 +23,6 @@ dotenv.config({path:'../.env'});
 
 
 
-//--------DEPLOYMENT---------
-const __dirname1 = path.resolve();
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname1, "./frontend/build")));
-  app.get("*", (req, res) => {
-    // console.log(__dirname1)
-    res.sendFile(path.resolve(__dirname1, "frontend", "build", "index.html"));
-  });
-} else {
-  app.get("/", (req, res) => {
-    res.send("Skribblei API is running successfully");
-  });
-}
-//--------DEPLOYMENT---------
-
-
-const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-  console.log(`Skribblei server listening on port ${PORT}`);
-});
-
-
-
 // Room management
 const rooms = new Map(); // roomCode -> roomData
 
@@ -322,3 +298,16 @@ io.on("connection", (socket) => {
   });
 });
 
+// Serve React build files
+const buildPath = path.join(__dirname, "..", "frontend", "build");
+app.use(express.static(buildPath));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(buildPath, "index.html"));
+});
+
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`Skribblei server listening on port ${PORT}`);
+});
