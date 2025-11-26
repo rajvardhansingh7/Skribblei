@@ -33,74 +33,117 @@ if (process.env.NODE_ENV === "production") {
   });
 } else {
   app.get("/", (req, res) => {
-    res.send("The api is running seccessfully");
+    res.send("Skribblei API is running successfully");
   });
 }
 //--------DEPLOYMENT---------
 
 
-let port_no = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
-server.listen(port_no, () => {
-  console.log(`Example app listening on port 3001`);
+server.listen(PORT, () => {
+  console.log(`Skribblei server listening on port ${PORT}`);
 });
 
 
 
-const chats = [];
-const players = [];
-let word;
-let drawerindex = 0;
-let timeout;
-let round=0;
-let playerGuessedRightWord=[]
+// Room management
+const rooms = new Map(); // roomCode -> roomData
 
-
-const startGame=()=>{
-  console.log("game started")
-  io.emit("game-start",{})
-  startTurn()
-  
-}
-
-const stopGame=()=>{
-  console.log("game stopped")
-
-  io.emit("game-stop",{})
-  drawerindex=0
-  if(timeout){
-    clearInterval(timeout)
+const createRoom = (roomCode) => {
+  if (!rooms.has(roomCode)) {
+    rooms.set(roomCode, {
+      players: [],
+      chats: [],
+      word: null,
+      drawerindex: 0,
+      timeout: null,
+      round: 0,
+      playerGuessedRightWord: [],
+      gameStarted: false
+    });
+    console.log(`Room created: ${roomCode}`);
+    return true;
   }
-}
+  return false;
+};
 
-const startTurn=()=>{
-  if(drawerindex>=players.length){
-    drawerindex=0
+const getRoom = (roomCode) => {
+  return rooms.get(roomCode);
+};
+
+const startGame = (roomCode) => {
+  const room = getRoom(roomCode);
+  if (!room) return;
+  
+  console.log(`Game started in room: ${roomCode}`);
+  room.gameStarted = true;
+  io.to(roomCode).emit("game-start", {});
+  startTurn(roomCode);
+};
+
+const stopGame = (roomCode) => {
+  const room = getRoom(roomCode);
+  if (!room) return;
+
+  console.log(`Game stopped in room: ${roomCode}`);
+  room.gameStarted = false;
+  io.to(roomCode).emit("game-stop", {});
+  room.drawerindex = 0;
+  if (room.timeout) {
+    clearTimeout(room.timeout);
+    room.timeout = null;
+  }
+};
+
+const startTurn = (roomCode) => {
+  const room = getRoom(roomCode);
+  if (!room) return;
+
+  if (room.drawerindex >= room.players.length) {
+    room.drawerindex = 0;
   }
   //notify frontend for starting turn with this user
-  io.emit("start-turn",players[drawerindex])
-  //word genrator
+  io.to(roomCode).emit("start-turn", room.players[room.drawerindex]);
+  //word generator
+};
 
+const startDraw = (roomCode) => {
+  const room = getRoom(roomCode);
+  if (!room) return;
 
-}
+  io.to(roomCode).emit("start-draw", room.players[room.drawerindex]);
+  room.timeout = setTimeout(() => {
+    endTurn(roomCode);
+  }, 60000);
+};
 
-const startDraw = ()=>{
-  io.emit("start-draw",players[drawerindex])
-  timeout = setTimeout(()=>{
-    endTurn()
-  }, 60000)
+const endTurn = (roomCode) => {
+  const room = getRoom(roomCode);
+  if (!room) return;
 
-}
-
-const endTurn=()=>{
-  io.emit("end-turn", players[drawerindex])
-  playerGuessedRightWord=[]
-  clearInterval(timeout)
+  io.to(roomCode).emit("end-turn", room.players[room.drawerindex]);
+  room.playerGuessedRightWord = [];
+  if (room.timeout) {
+    clearTimeout(room.timeout);
+    room.timeout = null;
+  }
   //notify turn ended for this user
-  drawerindex=(drawerindex+1)%players.length
+  room.drawerindex = (room.drawerindex + 1) % room.players.length;
   //points logic
-  startTurn(drawerindex)
-}
+  startTurn(roomCode);
+};
+
+const cleanupRoom = (roomCode) => {
+  const room = getRoom(roomCode);
+  if (room && room.players.length === 0) {
+    if (room.timeout) {
+      clearTimeout(room.timeout);
+    }
+    rooms.delete(roomCode);
+    console.log(`Room deleted: ${roomCode}`);
+  }
+};
 
 
 
@@ -109,108 +152,173 @@ const endTurn=()=>{
 io.on("connection", (socket) => {
   console.log("connected to socket.io");
   console.log("user connected", socket.id);
-  // socket.join("room")
+  
+  let currentRoomCode = null;
 
-  // socket.on("player-joined",(id)=>{
-  console.log("player joined with id", socket.id);
+  socket.on("join-room", ({ roomCode, isHost }) => {
+    if (!roomCode) {
+      socket.emit("room-error", { message: "Room code is required" });
+      return;
+    }
 
-  io.to(socket.id).emit("send-user-data",{})
+    // Create room if host
+    if (isHost) {
+      if (!createRoom(roomCode)) {
+        socket.emit("room-error", { message: "Room already exists" });
+        return;
+      }
+    } else {
+      // Check if room exists when joining
+      if (!rooms.has(roomCode)) {
+        socket.emit("room-error", { message: "Room does not exist" });
+        return;
+      }
+    }
 
-  socket.on("recieve-user-data",({username, avatar})=>{
+    currentRoomCode = roomCode;
+    socket.join(roomCode);
+    console.log(`User ${socket.id} joined room ${roomCode}`);
+    
+    // Send existing players to the new user
+    const room = getRoom(roomCode);
+    if (room && room.players.length > 0) {
+      socket.emit("updated-players", room.players);
+      if (room.gameStarted) {
+        socket.emit("game-already-started", {});
+      }
+    }
+
+    io.to(socket.id).emit("send-user-data", {});
+  });
+
+  socket.on("recieve-user-data", ({ username, avatar }) => {
+    if (!currentRoomCode) {
+      socket.emit("room-error", { message: "Not in a room" });
+      return;
+    }
+
+    const room = getRoom(currentRoomCode);
+    if (!room) {
+      socket.emit("room-error", { message: "Room not found" });
+      return;
+    }
+
     let newUser = {
       id: socket.id,
       name: username,
       points: 0,
       avatar: avatar
+    };
+    
+    room.players.push(newUser);
+    console.log(`Player added to room ${currentRoomCode}:`, newUser);
+    console.log(`Room ${currentRoomCode} now has ${room.players.length} players`);
+    
+    io.to(currentRoomCode).emit("updated-players", room.players);
+    
+    if (room.players.length === 2 && !room.gameStarted) {
+      startGame(currentRoomCode);
+    } else if (room.players.length >= 2 && room.gameStarted) {
+      socket.emit("game-already-started", {});
     }
-    players.push(newUser);
-    console.log(players)
-    io.emit("updated-players", players);
-    // })
-    if(players.length==2){
-      startGame()
-    }
-    if(players.length>=2){
-      io.emit("game-already-started",{})
-    }
-  })
-  
+  });
 
   socket.on("sending", (data) => {
-    // console.log("msg recievd",data)
-    console.log("data received");
-    socket.broadcast.emit("receiving", data);
+    if (!currentRoomCode) return;
+    console.log("data received in room", currentRoomCode);
+    socket.to(currentRoomCode).emit("receiving", data);
   });
 
   socket.on("sending-chat", (inputMessage) => {
-    const userID = socket.client.sockets.keys().next().value;
-    console.log(userID);
-    console.log("chat recieved", inputMessage);
-    const index = players.findIndex(play => play.id === userID);
-    let rightGuess= false;
-    if (word && inputMessage && inputMessage.toLowerCase() === word.toLowerCase()) {
-      console.log("right guess");
-      rightGuess=true;
-      
-      if (index > -1) {
-          players[index].points+=100
-      }
-      chats.push(`${userID} Guessed the right word`)
-      // io.to(userID).emit("right-guess")
-    }
-    else{
-      chats.push(inputMessage);
-    }
-    let returnObject={
-        msg: inputMessage,
-        player: players[index],
-        rightGuess: rightGuess,
-        players: players
-    }
-    io.emit("recieve-chat", returnObject);
+    if (!currentRoomCode) return;
 
-    if(rightGuess){
-      let u = playerGuessedRightWord.filter(pla=>pla===userID)
-      console.log("u",u)
-      if(u.length==0){
-        playerGuessedRightWord.push(userID)
-        if(playerGuessedRightWord.length===players.length-1){
+    const room = getRoom(currentRoomCode);
+    if (!room) return;
+
+    const userID = socket.id;
+    console.log("chat received in room", currentRoomCode, "from", userID);
+    
+    const index = room.players.findIndex(play => play.id === userID);
+    if (index === -1) return;
+
+    let rightGuess = false;
+    if (room.word && inputMessage && inputMessage.toLowerCase() === room.word.toLowerCase()) {
+      console.log("right guess in room", currentRoomCode);
+      rightGuess = true;
+      room.players[index].points += 100;
+      room.chats.push(`${userID} Guessed the right word`);
+    } else {
+      room.chats.push(inputMessage);
+    }
+
+    let returnObject = {
+      msg: inputMessage,
+      player: room.players[index],
+      rightGuess: rightGuess,
+      players: room.players
+    };
+    
+    io.to(currentRoomCode).emit("recieve-chat", returnObject);
+
+    if (rightGuess) {
+      let u = room.playerGuessedRightWord.filter(pla => pla === userID);
+      console.log("u", u);
+      if (u.length === 0) {
+        room.playerGuessedRightWord.push(userID);
+        if (room.playerGuessedRightWord.length === room.players.length - 1) {
           //emit to frontend for pause timer
-          io.emit("all-guessed-correct",{})
-          playerGuessedRightWord=[]
-          endTurn()
+          io.to(currentRoomCode).emit("all-guessed-correct", {});
+          room.playerGuessedRightWord = [];
+          endTurn(currentRoomCode);
         }
       }
     }
   });
 
+  socket.on("word-select", (w) => {
+    if (!currentRoomCode) return;
 
-  socket.on("word-select",(w)=>{
-    word=w
-    let wl=w.length
-    io.emit("word-len", wl)
-    startDraw()
+    const room = getRoom(currentRoomCode);
+    if (!room) return;
 
-
-  })
+    room.word = w;
+    let wl = w.length;
+    io.to(currentRoomCode).emit("word-len", wl);
+    startDraw(currentRoomCode);
+  });
 
   socket.on("disconnect", (reason) => {
-    // socket.leave(socket.id);
-    // socket.disconnect();
-    //   console.log(socket.id);
-    console.log(reason)
-    console.log("USER DISCONNECTED IN DISCONNECT", socket.id);
-    const index = players.findIndex(play => play.id === socket.id);
-    console.log(index)
+    console.log(reason);
+    console.log("USER DISCONNECTED:", socket.id);
+    
+    if (!currentRoomCode) return;
+
+    const room = getRoom(currentRoomCode);
+    if (!room) return;
+
+    const index = room.players.findIndex(play => play.id === socket.id);
+    console.log("Player index:", index);
+    
     if (index > -1) {
-      // only splice array when item is found
-      players.splice(index, 1); // 2nd parameter means remove one item only
+      room.players.splice(index, 1);
+      
+      // Update drawer index if needed
+      if (index < room.drawerindex) {
+        room.drawerindex--;
+      } else if (index === room.drawerindex && room.players.length > 0) {
+        room.drawerindex = room.drawerindex % room.players.length;
+      }
     }
-    io.emit("updated-players", players);
-    io.to(socket.id).emit("user-disconnected",{})
-    if(players.length<=1){
-      stopGame()
+    
+    io.to(currentRoomCode).emit("updated-players", room.players);
+    socket.to(currentRoomCode).emit("user-disconnected", {});
+    
+    if (room.players.length <= 1 && room.gameStarted) {
+      stopGame(currentRoomCode);
     }
+    
+    // Cleanup empty rooms
+    cleanupRoom(currentRoomCode);
   });
 });
 

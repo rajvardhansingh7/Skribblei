@@ -1,32 +1,20 @@
-# Skribblay.you
+# Skribblei
 
-Welcome to **Skribblay**, a fun and engaging online multiplayer drawing and guessing game inspired by Skribbl.io. This project aims to replicate the core functionalities of the original game and also adding some new features which are lacking in the skribble.io, providing an entertaining platform where players can showcase their drawing skills and guess the drawings of others.
+Welcome to **Skribblei**, a fun and engaging online multiplayer drawing and guessing game. This project provides an entertaining platform where players can showcase their drawing skills and guess the drawings of others.
 
-## Live Demo
-
-[Click Here](https://skribblay-you.onrender.com/)  
-
-> 💡 Open the link in **two separate tabs** to experience multiplayer mode (you’ll be joined together).
-
-
-## Table of Contents
-
-- [Features](#features)
-- [Screenshots](#screenshots)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+> **Note:** This project is based on the original [skribble-clone](https://github.com/techysanoj/skribble-clone) project by techysanoj (MIT License) and modified by Rajvardhan singh.
 
 ## Features
 
 - Multiplayer drawing and guessing game
 - Real-time gameplay with smooth and responsive interactions
+- Room-based gameplay with unique room codes
 - Customizable game rooms with different word packs
+- Support for multiple languages including English and Hindi
+- Dark mode and light mode themes
 - In-game chat functionality
 - User-friendly and intuitive interface
-- Leaderboard to track player scores
+- Real-time scoring system
 
 ## Screenshots
 
@@ -46,7 +34,7 @@ To get a local copy up and running, follow these steps:
 1. **Clone the repository:**
 
     ```sh
-    git clone https://github.com/techysanoj/skribble-clone.git
+    git clone <your-repository-url>
     cd skribble-clone
     ```
 
@@ -56,9 +44,18 @@ To get a local copy up and running, follow these steps:
     npm install
     ```
 
+    This will install dependencies for root, frontend, and backend.
+
 3. **Start the development server:**
 
     ```sh
+    npm start
+    ```
+
+    This will start the backend server. The frontend should be run separately for development:
+
+    ```sh
+    cd frontend
     npm start
     ```
 
@@ -71,16 +68,54 @@ To get a local copy up and running, follow these steps:
 ## Usage
 
 1. **Create or join a game room:**
+    - Enter your name and select your preferred language.
     - To start a new game, click on "Create Room" and share the room code with friends.
     - To join an existing game, enter the room code provided by the host.
 
 2. **Gameplay:**
-    - One player will be chosen to draw a word.
+    - One player will be chosen to draw a word from the selected word pack.
     - Other players will guess the word based on the drawing.
-    - Points are awarded for correct guesses and drawing accuracy.
+    - Points are awarded for correct guesses.
+    - The game continues with turns rotating among players.
 
-3. **Chat:**
+3. **Features:**
+    - Use the dark mode toggle for a comfortable playing experience.
+    - Copy the room code to easily share with friends.
     - Use the in-game chat to communicate with other players during the game.
+    - Select from multiple languages for word packs (English, Hindi, and more).
+
+## Deployment
+
+This application can be deployed on [Render](https://render.com) or similar platforms.
+
+### Build Command
+
+```sh
+npm run build
+```
+
+This will:
+- Install all dependencies (root, frontend, and backend)
+- Build the React frontend for production
+
+### Start Command
+
+```sh
+npm start
+```
+
+This runs `node backend/server.js` which serves both the API and the built frontend in production mode.
+
+### Environment Variables
+
+The server uses the `PORT` environment variable (defaults to 3000 if not set). Render will automatically set this.
+
+### Important Notes for Deployment
+
+1. Make sure `NODE_ENV` is set to `production` in your Render environment.
+2. The server automatically serves the built frontend from `frontend/build` when in production mode.
+3. Update the `ENDPOINT` constant in `frontend/src/views/PlayScreen.jsx` to match your deployment URL after deployment.
+4. The `homepage` field in `frontend/package.json` should be updated to your deployment URL (currently left empty with a TODO comment).
 
 ## Contributing
 
@@ -114,18 +149,19 @@ Please ensure your code adheres to our coding standards and includes relevant te
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
+## Attribution
+
+This project is based on the original skribble-clone project by:
+- **techysanoj** and contributors (original authors)
+
+Modified and extended by:
+- **Rajvardhan singh**
+
 ## Contact
 
-If you have any questions or suggestions, feel free to reach out to the project maintainers:
+If you have any questions or suggestions, feel free to reach out:
+- **Rajvardhan singh** - Project maintainer
 
-- **SANOJ** - [panditsanoj124@gmail.com](mailto:panditsanoj124@gmail.com)
-- GitHub: [techysanoj](https://github.com/techysanoj)
-- **Shashwat Bindal** - shashwat.bindal2002@gmail.com
-- GitHub: [shashwat282002](https://github.com/shashwat282002)
-- **Priyanshu Bhardwaj** - priyanshubhardwaj70@gmail.com
-- GitHub: [PriyanshuA1507](https://github.com/PriyanshuA1507)
-- **Shashwat Aggarwal** - shashwatagg04@gmail.com
-- GitHub: [ShashwatAgg0411](https://github.com/ShashwatAgg0411)
 ---
 
-Thank you for visiting **Skribblay.you**! We hope you enjoy playing and contributing to the project.
+Thank you for visiting **Skribblei**! We hope you enjoy playing and contributing to the project.

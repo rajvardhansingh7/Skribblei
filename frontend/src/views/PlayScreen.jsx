@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 import { Buffer } from "buffer";
 import PlayerCard from "../components/PlayerCard";
 import WordBar from "../components/WordBar";
-import { wordsArray, getWordsArrayLength } from "../components/Words";
+import { wordsArray, getWordsArrayLength, getWordsByLanguage } from "../components/Words";
 import { useNavigate, useLocation } from "react-router-dom";
 
 function PlayScreen() {
@@ -30,33 +30,76 @@ function PlayScreen() {
   const [showClock, setShowClock] = useState(false);
   const [wordLen, setWordLen] = useState(0);
   const [guessedWord, setGuessedWord] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [language, setLanguage] = useState("en");
   const navigate = useNavigate()
   const location = useLocation()
   const userDataRecieved = location.state || {};
+  // TODO: Update ENDPOINT to your Render deployment URL after deployment
   const ENDPOINT = "https://skribblay-you.onrender.com/";
   const ENDPOINT_LOCAL = "http://localhost:3001/";
+  
   useEffect(() => {
-    console.log("user Data revcievd", userDataRecieved)
-    let us = localStorage.getItem("username")
-    if(!us || !userDataRecieved.username || !userDataRecieved.avatar){
+    console.log("user Data received", userDataRecieved)
+    let us = localStorage.getItem("username");
+    let currentRoomCode = userDataRecieved.roomCode || localStorage.getItem("roomCode");
+    let isHost = userDataRecieved.isHost === true || localStorage.getItem("isHost") === "true";
+    let currentLanguage = userDataRecieved.language || localStorage.getItem("language") || "en";
+    
+    if(currentRoomCode) {
+      setRoomCode(currentRoomCode);
+    }
+    
+    if(currentLanguage) {
+      setLanguage(currentLanguage);
+    }
+    
+    if(!us || !userDataRecieved.username || !userDataRecieved.avatar || !currentRoomCode){
+      alert("Missing required information. Redirecting to home.");
       navigate("/")
       return;
     }
+    
     const newSocket = io.connect(process.env.REACT_APP_NODE_ENV === "production"
     ? ENDPOINT
-    : ENDPOINT_LOCAL, );
-    // console.log(newSocket);
+    : ENDPOINT_LOCAL);
+    
     setSocket(newSocket);
-    // newSocket.emit("player-joined",newSocket.id)
+
+    // Handle room errors
+    newSocket.on("room-error", (error) => {
+      console.error("Room error:", error);
+      alert(error.message || "Error joining room. Redirecting to home.");
+      navigate("/");
+    });
+
+    // Join room when socket connects
+    const joinRoom = () => {
+      console.log("Socket connected, joining room:", currentRoomCode);
+      newSocket.emit("join-room", { roomCode: currentRoomCode, isHost });
+    };
+
+    if (newSocket.connected) {
+      joinRoom();
+    } else {
+      newSocket.on("connect", joinRoom);
+    }
 
     window.onbeforeunload=()=>{
       localStorage.removeItem("username");
+      localStorage.removeItem("roomCode");
+      localStorage.removeItem("isHost");
     };
+    
     return()=>{
       if(newSocket){
-      newSocket.disconnect();
+        newSocket.disconnect();
       }
-      localStorage.removeItem("username")
+      localStorage.removeItem("username");
+      localStorage.removeItem("roomCode");
+      localStorage.removeItem("isHost");
     }
   }, []);
 
@@ -503,7 +546,8 @@ function PlayScreen() {
   };
 
   const getRandomWords = () => {
-    let lengthWordArray = getWordsArrayLength();
+    const wordsForLanguage = getWordsByLanguage(language);
+    let lengthWordArray = wordsForLanguage.length;
     let newWordsArray = [];
     let newIndex;
     let prevIndex = -1;
@@ -513,12 +557,24 @@ function PlayScreen() {
       while (newIndex === prevIndex) {
         newIndex = Math.floor(Math.random() * lengthWordArray);
       }
-      newWordsArray.push(wordsArray[newIndex]);
+      newWordsArray.push(wordsForLanguage[newIndex]);
       prevIndex = newIndex;
     }
-    console.log(newWordsArray);
+    console.log("Random words for language", language, ":", newWordsArray);
     return newWordsArray;
   };
+
+  const copyRoomCode = () => {
+    if (roomCode) {
+      navigator.clipboard.writeText(roomCode).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(err => {
+        console.error("Failed to copy:", err);
+      });
+    }
+  };
+
   const basicColors = [
     "#000000",
     "#FF0000",
@@ -532,8 +588,43 @@ function PlayScreen() {
     "#FFFFFF",
   ];
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   return (
-    <div className="relative w-screen h-screen">
+    <div className={`relative w-screen h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+      {/* Top Right Controls - Room Code & Theme Toggle */}
+      <div className="absolute top-4 right-4 z-50 flex gap-3 items-start">
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className={`p-3 rounded-lg shadow-lg transition-all duration-300 ${
+            darkMode 
+              ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700' 
+              : 'bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {darkMode ? "☀️" : "🌙"}
+        </button>
+        
+        {/* Room Code Display */}
+        {roomCode && (
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-lg p-4 flex items-center gap-3">
+            <div className="text-white">
+              <div className="text-xs font-semibold mb-1 opacity-90">Room Code</div>
+              <div className="text-2xl font-bold tracking-widest">{roomCode}</div>
+            </div>
+            <button
+              onClick={copyRoomCode}
+              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200 text-sm whitespace-nowrap"
+            >
+              {copied ? "✓ Copied!" : "📋 Copy"}
+            </button>
+          </div>
+        )}
+      </div>
       <div className="w-full h-full flex flex-col justify-center items-center gap-4">
         <div>
           <WordBar
@@ -543,10 +634,15 @@ function PlayScreen() {
             showWords={showWords}
             currentUserDrawing={currentUserDrawing}
             selectedWord={selectedWord}
+            darkMode={darkMode}
           />
         </div>
         <div className="w-full flex justify-center items-center gap-10">
-          <div className="w-[300px] h-[540px] border border-black bg-white text-black">
+          <div className={`w-[300px] h-[540px] border rounded-lg ${
+            darkMode 
+              ? 'border-gray-700 bg-gray-800 text-white' 
+              : 'border-gray-300 bg-white text-black'
+          } shadow-lg transition-colors duration-300`}>
             {allPlayers &&
               allPlayers.map((pl, idx) => (
                 <PlayerCard
@@ -557,7 +653,7 @@ function PlayScreen() {
                 />
               ))}
           </div>
-          <div className="w-[680px] h-[540px] ">
+          <div className="w-[680px] h-[540px] relative">
             <canvas
               ref={canvasRef}
               width={680}
@@ -566,17 +662,26 @@ function PlayScreen() {
               onMouseMove={paint}
               onMouseUp={handleMouseUp}
               onMouseLeave={exitPaint}
-              className={`${!currentUserDrawing ? "cursor-not-allowed" : ""}`}
-              style={{ border: "1px solid #000", backgroundColor: "white" }}
+              className={`rounded-lg shadow-lg transition-all duration-300 ${!currentUserDrawing ? "cursor-not-allowed" : ""}`}
+              style={{ 
+                border: darkMode ? "2px solid #4B5563" : "2px solid #E5E7EB", 
+                backgroundColor: darkMode ? "#1F2937" : "white" 
+              }}
             />
             <div>
               {showWords && playerDrawing && playerDrawing.id === socket.id && (
-                <div className="absolute top-0 left-0 h-full w-full flex justify-center gap-10 items-center z-10 bg-white bg-opacity-80">
+                <div className={`absolute top-0 left-0 h-full w-full flex justify-center gap-10 items-center z-10 rounded-lg transition-colors duration-300 ${
+                  darkMode ? 'bg-gray-900 bg-opacity-95' : 'bg-white bg-opacity-90'
+                }`}>
                   {words.map((w, idx) => (
                     <div
                       onClick={() => handleWorSelect(w)}
                       key={idx}
-                      className="text-black text-center w-36 h-7 border-2 rounded-md border-black"
+                      className={`text-center w-36 h-10 flex items-center justify-center border-2 rounded-md cursor-pointer transition-all duration-200 hover:scale-105 ${
+                        darkMode 
+                          ? 'text-white border-gray-500 bg-gray-800 hover:bg-gray-700 hover:border-gray-400' 
+                          : 'text-black border-gray-800 bg-white hover:bg-gray-100'
+                      }`}
                     >
                       {w}
                     </div>
@@ -584,13 +689,21 @@ function PlayScreen() {
                 </div>
               )}
               {showWords && playerDrawing && playerDrawing.id !== socket.id && (
-                <div className="text-black absolute h-full w-full top-0 left-0 flex justify-center items-center z-10 bg-white bg-opacity-80">
+                <div className={`absolute h-full w-full top-0 left-0 flex justify-center items-center z-10 rounded-lg transition-colors duration-300 ${
+                  darkMode 
+                    ? 'text-white bg-gray-900 bg-opacity-95' 
+                    : 'text-black bg-white bg-opacity-90'
+                }`}>
                   {`${playerDrawing.name} is choosing a word`}
                 </div>
               )}
             </div>
           </div>
-          <div className="w-[300px] h-[540px] border border-black flex flex-col-reverse rounded-b-lg p-1">
+          <div className={`w-[300px] h-[540px] border rounded-lg flex flex-col-reverse p-1 shadow-lg transition-colors duration-300 ${
+            darkMode 
+              ? 'border-gray-700 bg-gray-800' 
+              : 'border-gray-300 bg-white'
+          }`}>
             <form
               onSubmit={(e) => {
                 handleSubmitForm(e);
@@ -599,10 +712,18 @@ function PlayScreen() {
               <input
                 value={inputMessage}
                 placeholder="Type your guess here"
-                className={`min-w-full active max-w-full text-black flex flex-wrap px-6 py-2 rounded-lg font-medium bg-sky-50 bg-opacity-40 border border-blue-300 placeholder-gray-400 text-md focus:outline-none focus:border-blue-400 focus:bg-white focus:ring-0 focus:shadow-[0_0px_10px_2px_#bfdbfe] ${
-                  currentUserDrawing || showWords || !gameStarted
-                    ? "cursor-not-allowed"
-                    : ""
+                className={`min-w-full active max-w-full flex flex-wrap px-6 py-2 rounded-lg font-medium text-md focus:outline-none focus:ring-0 transition-colors duration-300 ${
+                  darkMode
+                    ? `bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:bg-gray-600 focus:shadow-[0_0px_10px_2px_rgba(59,130,246,0.3)] ${
+                        currentUserDrawing || showWords || !gameStarted
+                          ? "cursor-not-allowed opacity-50"
+                          : ""
+                      }`
+                    : `bg-sky-50 bg-opacity-40 border border-blue-300 text-black placeholder-gray-400 focus:border-blue-400 focus:bg-white focus:shadow-[0_0px_10px_2px_#bfdbfe] ${
+                        currentUserDrawing || showWords || !gameStarted
+                          ? "cursor-not-allowed opacity-50"
+                          : ""
+                      }`
                 }`}
                 onChange={(e) => handleChangeText(e)}
                 disabled={currentUserDrawing || showWords || !gameStarted || guessedWord}
@@ -612,8 +733,14 @@ function PlayScreen() {
               allChats.length > 0 &&
               allChats.map((chat, idx) => (
                 <p
-                  className={`${
-                    chat.rightGuess ? "bg-green-200 text-green-600" : ""
+                  className={`px-2 py-1 rounded transition-colors duration-300 ${
+                    chat.rightGuess 
+                      ? darkMode 
+                        ? "bg-green-900 text-green-300" 
+                        : "bg-green-200 text-green-600"
+                      : darkMode
+                        ? "text-gray-300"
+                        : "text-gray-700"
                   }`}
                   key={idx}
                 >
@@ -641,17 +768,24 @@ function PlayScreen() {
                     width: "40px",
                     height: "40px",
                     margin: "0 5px",
-                    border: "2px solid #333",
+                    border: `2px solid ${darkMode ? "#4B5563" : "#333"}`,
                     borderRadius: "10px",
                     cursor: "pointer",
-                    transition: "border-color 0.3s ease",
+                    transition: "all 0.3s ease",
                     outline: "none",
-                    boxShadow: "3px 3px 5px rgba(0, 0, 0, 0.1)",
-                    transition: "transform 0.3s",
+                    boxShadow: darkMode 
+                      ? "3px 3px 5px rgba(0, 0, 0, 0.5)" 
+                      : "3px 3px 5px rgba(0, 0, 0, 0.1)",
                   }}
                   onClick={() => setColor(c)}
-                  onMouseEnter={(e) => (e.target.style.borderColor = "#FFA500")}
-                  onMouseLeave={(e) => (e.target.style.borderColor = "#333")}
+                  onMouseEnter={(e) => {
+                    e.target.style.borderColor = "#FFA500";
+                    e.target.style.transform = "scale(1.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.borderColor = darkMode ? "#4B5563" : "#333";
+                    e.target.style.transform = "scale(1)";
+                  }}
                   className="zoom-btn"
                 />
               ))}
@@ -666,36 +800,54 @@ function PlayScreen() {
               <button
                 className="zoom-btn"
                 style={{
-                  backgroundColor: "black",
+                  backgroundColor: darkMode ? "#374151" : "black",
                   padding: "8px 20px",
                   margin: "0 10px",
-                  border: "2px solid black",
+                  border: `2px solid ${darkMode ? "#4B5563" : "black"}`,
                   borderRadius: "10px",
                   fontFamily: "Comic Sans MS",
                   fontSize: "18px",
                   fontWeight: "bold",
                   color: "white",
                   cursor: "pointer",
+                  transition: "all 0.3s ease",
                 }}
                 onClick={() => setIsEraser(!isEraser)}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#4B5563" : "#333";
+                  e.target.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#374151" : "black";
+                  e.target.style.transform = "scale(1)";
+                }}
               >
                 {isEraser ? "Draw" : "Eraser"}
               </button>
               <button
                 className="zoom-btn"
                 style={{
-                  backgroundColor: "black",
+                  backgroundColor: darkMode ? "#374151" : "black",
                   padding: "8px 20px",
                   margin: "0 10px",
-                  border: "2px solid black",
+                  border: `2px solid ${darkMode ? "#4B5563" : "black"}`,
                   borderRadius: "10px",
                   fontFamily: "Comic Sans MS",
                   fontSize: "18px",
                   fontWeight: "bold",
                   color: "white",
                   cursor: "pointer",
+                  transition: "all 0.3s ease",
                 }}
                 onClick={() => setStraightLineMode(!straightLineMode)}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#4B5563" : "#333";
+                  e.target.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#374151" : "black";
+                  e.target.style.transform = "scale(1)";
+                }}
               >
                 {straightLineMode
                   ? "Disable Straight Line"
@@ -704,18 +856,27 @@ function PlayScreen() {
               <button
                 className="zoom-btn"
                 style={{
-                  backgroundColor: "black",
+                  backgroundColor: darkMode ? "#374151" : "black",
                   padding: "8px 20px",
                   margin: "0 10px",
-                  border: "2px solid black",
+                  border: `2px solid ${darkMode ? "#4B5563" : "black"}`,
                   borderRadius: "10px",
                   fontFamily: "Comic Sans MS",
                   fontSize: "18px",
                   fontWeight: "bold",
                   color: "white",
                   cursor: "pointer",
+                  transition: "all 0.3s ease",
                 }}
                 onClick={fillCanvas}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#4B5563" : "#333";
+                  e.target.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#374151" : "black";
+                  e.target.style.transform = "scale(1)";
+                }}
               >
                 Fill Canvas
               </button>
@@ -729,30 +890,44 @@ function PlayScreen() {
                 }}
                 style={{ marginLeft: "10px", marginRight: "10px" }}
               />
-              <label>Radius:</label>
+              <label style={{ color: darkMode ? "white" : "black" }}>Radius:</label>
               <input
                 type="range"
                 min="1"
                 max="100"
                 value={radius}
                 onChange={(e) => setRadius(parseInt(e.target.value))}
-                style={{ marginLeft: "5px", marginRight: "10px" }}
+                style={{ 
+                  marginLeft: "5px", 
+                  marginRight: "10px",
+                  accentColor: darkMode ? "#6366F1" : "#000"
+                }}
               />
 
               <button
                 className="zoom-btn"
                 style={{
+                  backgroundColor: darkMode ? "#374151" : "black",
                   padding: "8px 20px",
                   margin: "0 10px",
-                  border: "2px solid black",
+                  border: `2px solid ${darkMode ? "#4B5563" : "black"}`,
                   borderRadius: "10px",
                   fontFamily: "Comic Sans MS",
                   fontSize: "18px",
                   fontWeight: "bold",
                   color: "white",
                   cursor: "pointer",
+                  transition: "all 0.3s ease",
                 }}
                 onClick={clearCanvas}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#4B5563" : "#333";
+                  e.target.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = darkMode ? "#374151" : "black";
+                  e.target.style.transform = "scale(1)";
+                }}
               >
                 Clear
               </button>

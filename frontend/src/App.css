@@ -20,7 +20,7 @@ body {
   }
   
   .app-header {
-    font-family: 'Architects Daughter';
+    font-family: 'Architects Daughter', cursive;
     text-shadow:
       0 0 7px #fff,
       0 0 10px #fff,
@@ -30,93 +30,221 @@ body {
       0 0 92px #01A7F1,
       0 0 102px #01A7F1,
       0 0 151px #01A7F1;
-    font-size:5rem;
+    font-size: 5rem;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     align-items: center;
     margin-top: -70px;
-    -webkit-text-stroke: 2px black; /* Width and color of the stroke */
+    -webkit-text-stroke: 2px black;
+    animation: glow 2s ease-in-out infinite alternate;
+    text-align: center;
+  }
+
+  @keyframes glow {
+    from {
+      text-shadow:
+        0 0 7px #fff,
+        0 0 10px #fff,
+        0 0 21px #fff,
+        0 0 42px #01A7F1,
+        0 0 82px #01A7F1,
+        0 0 92px #01A7F1,
+        0 0 102px #01A7F1,
+        0 0 151px #01A7F1;
+    }
+    to {
+      text-shadow:
+        0 0 10px #fff,
+        0 0 15px #fff,
+        0 0 25px #fff,
+        0 0 50px #01A7F1,
+        0 0 95px #01A7F1,
+        0 0 105px #01A7F1,
+        0 0 115px #01A7F1,
+        0 0 165px #01A7F1;
+    }
   }
   
   .main-container {
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-    width: 400px;
+    background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(20, 20, 40, 0.95) 100%);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    width: 450px;
     margin: auto;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   .input-container {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-bottom: 20px;
     color: black;
-
   }
   
   .input {
     width: 48%;
-    padding: 10px;
-    border-radius: 5px;
-    border: none;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.95);
+    font-size: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: #333;
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: #01A7F1;
+    box-shadow: 0 0 0 3px rgba(1, 167, 241, 0.2);
+    background-color: white;
   }
 
   .input::placeholder{
-    color: #01A7F1;
-    opacity: 1;
+    color: #666;
+    opacity: 0.8;
+  }
+
+  select.input {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+  }
+
+  select.input option {
+    background-color: white;
+    color: #333;
+    padding: 10px;
   }
 
   .avatar-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
+    margin-bottom: 25px;
+    padding: 10px;
   }
   
   .arrow-button {
-
     border: none;
+    background: rgba(255, 255, 255, 0.1);
     color: white;
     font-size: 2em;
     cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+  }
+
+  .arrow-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
   }
   
   .avatar {
     width: 150px;
     height: 150px;
     margin: 0 15px;
+    border-radius: 50%;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .avatar:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+    transform: scale(1.05);
   }
   
   .room-code-input {
     width: 100%;
-    padding: 10px;
-    border-radius: 5px;
-    border: none;
+    padding: 14px 20px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
     margin-bottom: 15px;
     color: white;
-    background-color: #EE5690;
-    border-radius: 40px;
+    background: linear-gradient(135deg, #EE5690 0%, #ff6ba8 100%);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(238, 86, 144, 0.3);
+  }
+
+  .room-code-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 20px rgba(238, 86, 144, 0.5);
+    transform: translateY(-2px);
   }
 
   .room-code-input::placeholder {
-    color: white;
+    color: rgba(255, 255, 255, 0.9);
+    opacity: 0.9;
+  }
+
+  .room-code-input:read-only {
+    background: linear-gradient(135deg, #01A7F1 0%, #00d4ff 100%);
+    box-shadow: 0 4px 15px rgba(1, 167, 241, 0.3);
   }
   
   .play-button {
     width: 100%;
-    padding: 10px;
-    background-color: #09F081;
+    padding: 16px;
+    background: linear-gradient(135deg, #09F081 0%, #07c167 100%);
     border: none;
-    border-radius: 5px;
-    color: black;
-    font-size: 1.3em;
+    border-radius: 12px;
+    color: #000;
+    font-size: 1.2em;
+    font-weight: 700;
     cursor: pointer;
-    border-radius: 40px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(9, 240, 129, 0.4);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
   }
   
   .play-button:hover {
-    background-color: #07c167;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(9, 240, 129, 0.6);
+    background: linear-gradient(135deg, #0aff99 0%, #09F081 100%);
+  }
+
+  .play-button:active {
+    transform: translateY(0);
+  }
+
+  .create-room-button {
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #01A7F1 0%, #00d4ff 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(1, 167, 241, 0.4);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+
+  .create-room-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(1, 167, 241, 0.6);
+    background: linear-gradient(135deg, #00d4ff 0%, #01A7F1 100%);
+  }
+
+  .create-room-button:active {
+    transform: translateY(0);
   }
   
   .icon-container {

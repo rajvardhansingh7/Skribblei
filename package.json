@@ -1,4 +1,9 @@
 {
+  "name": "skribblei",
+  "version": "1.0.0",
+  "description": "Skribblei – an online multiplayer drawing and guessing game.",
+  "author": "Rajvardhan singh",
+  "license": "MIT",
   "dependencies": {
     "react-router-dom": "^6.23.1"
   },
