@@ -2,7 +2,11 @@
 
 Welcome to **Skribblei**, a fun and engaging online multiplayer drawing and guessing game. This project provides an entertaining platform where players can showcase their drawing skills and guess the drawings of others.
 
-> **Note:** This project is based on the original [skribble-clone](https://github.com/techysanoj/skribble-clone) project by techysanoj (MIT License) and modified by Rajvardhan singh.
+## Live Demo
+
+🎮 **[Play Skribblei Now](https://skribblei.onrender.com)**
+
+> 💡 Open the link in **two separate tabs** to experience multiplayer mode (you'll be joined together).
 
 ## Features
 
@@ -148,14 +152,6 @@ Please ensure your code adheres to our coding standards and includes relevant te
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Attribution
-
-This project is based on the original skribble-clone project by:
-- **techysanoj** and contributors (original authors)
-
-Modified and extended by:
-- **Rajvardhan singh**
 
 ## Contact
 
