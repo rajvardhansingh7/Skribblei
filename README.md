@@ -20,17 +20,6 @@ Welcome to **Skribblei**, a fun and engaging online multiplayer drawing and gues
 - User-friendly and intuitive interface
 - Real-time scoring system
 
-## Screenshots
-
-![Game Lobby](frontend/public/homescreen.png)
-*Game Lobby*
-
-![Drawing Interface](frontend/public/drawscreen.png)
-*Drawing Interface*
-
-![Guessing Phase](frontend/public/palyscreen.png)
-*Guessing Phase*
-
 ## Installation
 
 To get a local copy up and running, follow these steps:
