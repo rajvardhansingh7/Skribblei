@@ -38,7 +38,7 @@ function PlayScreen() {
   const location = useLocation()
   const userDataRecieved = location.state || {};
   // TODO: Update ENDPOINT to your Render deployment URL after deployment
-  const ENDPOINT = "https://skribblay-you.onrender.com/";
+  const ENDPOINT = process.env.REACT_APP_API_URL || "http://localhost:3001";
   const ENDPOINT_LOCAL = "http://localhost:3001/";
   
   useEffect(() => {
@@ -62,9 +62,7 @@ function PlayScreen() {
       return;
     }
     
-    const newSocket = io.connect(process.env.REACT_APP_NODE_ENV === "production"
-    ? ENDPOINT
-    : ENDPOINT_LOCAL);
+    const newSocket = io(ENDPOINT);
     
     setSocket(newSocket);
 

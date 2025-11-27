@@ -5,21 +5,20 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 const dotenv = require("dotenv");
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 const server = http.createServer(app);
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
-    // origin: "http://localhost:3000",
-    origin: "*"
+    origin: process.env.CLIENT_ORIGIN || "*"
   },
   connectionStateRecovery: {},
 });
 // const port = 3001;
 
-app.use(cors());
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:3000" }));
 app.use(express.json());  
-dotenv.config({path:'../.env'});
 
 
 
@@ -306,7 +305,7 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(buildPath, "index.html"));
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 server.listen(PORT, () => {
   console.log(`Skribblei server listening on port ${PORT}`);

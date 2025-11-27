@@ -112,13 +112,20 @@ This runs `node backend/server.js` which serves both the API and the built front
 
 ### Environment Variables
 
-The server uses the `PORT` environment variable (defaults to 3000 if not set). Render will automatically set this.
+Backend:
+- PORT: defaults to 3001 locally
+- CLIENT_ORIGIN: origin allowed for CORS (http://localhost:3000 in development)
+
+Frontend:
+- REACT_APP_API_URL: backend URL used by the Socket.IO client (http://localhost:3001 in development)
+
+Render will automatically set PORT. Set CLIENT_ORIGIN and REACT_APP_API_URL to your deployed URLs in production.
 
 ### Important Notes for Deployment
 
 1. Make sure `NODE_ENV` is set to `production` in your Render environment.
 2. The server automatically serves the built frontend from `frontend/build` when in production mode.
-3. Update the `ENDPOINT` constant in `frontend/src/views/PlayScreen.jsx` to match your deployment URL after deployment.
+3. Set `REACT_APP_API_URL` in `frontend/.env` to your backend URL after deployment.
 4. The `homepage` field in `frontend/package.json` should be updated to your deployment URL (currently left empty with a TODO comment).
 
 ## Contributing

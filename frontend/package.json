@@ -5,6 +5,7 @@
   "description": "Skribblei frontend – an online multiplayer drawing and guessing game.",
   "author": "Rajvardhan singh",
   "homepage": "",
+  "proxy": "http://localhost:3001",
   "_comment_homepage": "TODO: Update homepage field to your Render deployment URL after deployment",
   "dependencies": {
     "@dicebear/collection": "^8.0.1",
