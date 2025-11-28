@@ -37,9 +37,9 @@ function PlayScreen() {
   const navigate = useNavigate()
   const location = useLocation()
   const userDataRecieved = location.state || {};
-  // TODO: Update ENDPOINT to your Render deployment URL after deployment
-  const ENDPOINT = process.env.REACT_APP_API_URL || "http://localhost:3001";
-  const ENDPOINT_LOCAL = "http://localhost:3001/";
+  // TODO: Set REACT_APP_API_URL in frontend/.env for production (HTTPS)
+  const ENDPOINT = process.env.REACT_APP_API_URL;
+  const SOCKET_OPTIONS = { path: "/socket.io", transports: ["websocket", "polling"], withCredentials: true };
   
   useEffect(() => {
     console.log("user Data received", userDataRecieved)
@@ -62,7 +62,7 @@ function PlayScreen() {
       return;
     }
     
-    const newSocket = io(ENDPOINT);
+    const newSocket = ENDPOINT ? io(ENDPOINT, SOCKET_OPTIONS) : io("/", SOCKET_OPTIONS);
     
     setSocket(newSocket);
 

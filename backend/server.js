@@ -11,13 +11,17 @@ const server = http.createServer(app);
 const io = new Server(server, {
   pingTimeout: 60000,
   cors: {
-    origin: process.env.CLIENT_ORIGIN || "*"
+    origin: process.env.CLIENT_ORIGIN || "*",
+    methods: ["GET", "POST"],
+    credentials: true
   },
+  path: "/socket.io",
+  transports: ["websocket", "polling"],
   connectionStateRecovery: {},
 });
 // const port = 3001;
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:3000" }));
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || "http://localhost:3000", methods: ["GET", "POST"], credentials: true }));
 app.use(express.json());  
 
 
