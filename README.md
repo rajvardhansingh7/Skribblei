@@ -8,6 +8,19 @@ Welcome to **Skribblei**, a fun and engaging online multiplayer drawing and gues
 
 > 💡 Open the link in **two separate tabs** to experience multiplayer mode (you'll be joined together).
 
+## 📸 Screenshots
+
+Here are some visuals of Skribblei in action:
+
+### 🟦 Home Screen / Lobby  
+![Screenshot 1](./WhatsApp%20Image%202025-11-29%20at%2002.37.55.jpeg)
+
+### 🎨 Drawing Screen  
+![Screenshot 2](./WhatsApp%20Image%202025-11-29%20at%2002.38.50.jpeg)
+
+### 👥 Room & Players View  
+![Screenshot 3](./WhatsApp%20Image%202025-11-29%20at%2002.41.05.jpeg)
+
 ## Features
 
 - Multiplayer drawing and guessing game
