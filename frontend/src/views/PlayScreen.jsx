@@ -90,7 +90,6 @@ function PlayScreen() {
       localStorage.removeItem("roomCode");
       localStorage.removeItem("isHost");
     };
-    
     return()=>{
       if(newSocket){
         newSocket.disconnect();
@@ -191,6 +190,31 @@ function PlayScreen() {
   }, [color, radius]);
   useEffect(() => {
     if (socket) {
+      socket.on("current-state", ({ phase, drawer, wordLen }) => {
+        console.log("current-state", { phase, drawer, wordLen });
+        setgameStarted(true);
+        setPlayerDrawing(drawer);
+        if (phase === "choosing") {
+          setShowWords(drawer && drawer.id === socket.id);
+          setSelectedWord(null);
+          setShowClock(false);
+          setCurrentUserDrawing(false);
+          const newRandomWords = getRandomWords();
+          setWords(newRandomWords);
+        } else if (phase === "drawing") {
+          setShowWords(false);
+          setShowClock(true);
+          setWordLen(wordLen || 0);
+          setCurrentUserDrawing(drawer && drawer.id === socket.id);
+        }
+      });
+    }
+    return () => {
+      if (socket) socket.off("current-state");
+    };
+  }, [socket, language]);
+  useEffect(() => {
+    if (socket) {
       socket.on("game-start", () => {
         console.log("game started");
         setgameStarted(true);
@@ -223,14 +247,19 @@ function PlayScreen() {
       socket.on("start-turn", (player) => {
         console.log("turn started of", player);
         setGuessedWord(false);
-        clearCanvasAfterTurn(); // setPlayerDrawing(player)
+        clearCanvasAfterTurn();
         setPlayerDrawing(player);
-        //getwiords function call
         let newRandomWords = getRandomWords();
         setWords(newRandomWords);
-        setShowWords(true);
+        setSelectedWord(null);
+        setShowClock(false);
+        setCurrentUserDrawing(false);
+        setShowWords(player.id === socket.id);
       });
     }
+    return () => {
+      if (socket) socket.off("start-turn");
+    };
   }, [socket]);
 
   useEffect(() => {
@@ -248,14 +277,16 @@ function PlayScreen() {
         console.log("drawing started of", player);
         setShowWords(false);
         setShowClock(true);
-        clearCanvasAfterTurn(); // setPlayerDrawing(player)
-        // setPlayerDrawing(player)
+        clearCanvasAfterTurn();
         if (player.id === socket.id) {
           console.log("your turn started");
           setCurrentUserDrawing(true);
         }
       });
     }
+    return () => {
+      if (socket) socket.off("start-draw");
+    };
   }, [socket]);
 
   useEffect(() => {
@@ -383,10 +414,12 @@ function PlayScreen() {
   };
 
   const getCoordinates = (event) => {
-    // const canvas = canvasRef.current;
+    const touch = event.touches?.[0] || event.changedTouches?.[0];
+    const pageX = touch ? touch.pageX : event.pageX;
+    const pageY = touch ? touch.pageY : event.pageY;
     return {
-      x: event.pageX - canvasRef.current.offsetLeft,
-      y: event.pageY - canvasRef.current.offsetTop,
+      x: pageX - canvasRef.current.offsetLeft,
+      y: pageY - canvasRef.current.offsetTop,
     };
   };
 
@@ -660,10 +693,14 @@ function PlayScreen() {
               onMouseMove={paint}
               onMouseUp={handleMouseUp}
               onMouseLeave={exitPaint}
+              onTouchStart={startPaint}
+              onTouchMove={paint}
+              onTouchEnd={handleMouseUp}
               className={`rounded-lg shadow-lg transition-all duration-300 ${!currentUserDrawing ? "cursor-not-allowed" : ""}`}
               style={{ 
                 border: darkMode ? "2px solid #4B5563" : "2px solid #E5E7EB", 
-                backgroundColor: darkMode ? "#1F2937" : "white" 
+                backgroundColor: darkMode ? "#1F2937" : "white",
+                touchAction: "none"
               }}
             />
             <div>

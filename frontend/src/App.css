@@ -1,7 +1,7 @@
 body {
     margin: 0;
     font-family: 'Arial', sans-serif;
-    background-image: url('/public/background.png');
+    /* background image moved to inline style in App.jsx to avoid css-loader path resolution issues */
     background-repeat: no-repeat;
     background-position: center center;
     background-attachment: fixed;
@@ -282,6 +282,101 @@ body {
   
   .icon :hover {
     color: black;
+  }
+
+  @media (max-width: 768px) {
+    .app-header {
+      font-size: 3rem;
+      margin-top: -40px;
+      margin-bottom: 20px;
+    }
+
+    .main-container {
+      width: 90%;
+      padding: 20px;
+    }
+
+    .input-container {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input {
+      width: 100%;
+    }
+
+    .avatar-container {
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    .arrow-button {
+      font-size: 1.5em;
+      padding: 8px 12px;
+      margin: 5px 0;
+    }
+
+    .avatar {
+      width: 100px;
+      height: 100px;
+      margin: 10px 0;
+    }
+
+    .room-code-input,
+    .play-button,
+    .create-room-button {
+      padding: 12px;
+      font-size: 1em;
+    }
+
+    .icon-container {
+      position: static;
+      transform: translateY(0);
+      flex-direction: row;
+      margin-top: 20px;
+    }
+
+    .icon {
+      font-size: 1.5rem;
+      margin: 5px;
+    }
+
+    .back-rectangle {
+      width: 3rem;
+      height: 2.5em;
+      margin-left: 5px;
+      margin-right: -15px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    body {
+      height: auto;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+
+    .app-header {
+      font-size: 2.5rem;
+      margin-top: -30px;
+    }
+
+    .main-container {
+      width: 95%;
+      padding: 15px;
+    }
+
+    .avatar {
+      width: 80px;
+      height: 80px;
+    }
+
+    .room-code-input,
+    .play-button,
+    .create-room-button {
+      padding: 10px;
+      font-size: 0.9em;
+    }
   }
 
 

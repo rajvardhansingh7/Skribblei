@@ -35,7 +35,8 @@ const createRoom = (roomCode) => {
       timeout: null,
       round: 0,
       playerGuessedRightWord: [],
-      gameStarted: false
+      gameStarted: false,
+      phase: "waiting"
     });
     console.log(`Room created: ${roomCode}`);
     return true;
@@ -51,7 +52,7 @@ const startGame = (roomCode) => {
   const room = getRoom(roomCode);
   if (!room) return;
   
-  console.log(`Game started in room: ${roomCode}`);
+  console.log(`Game started in room: ${roomCode}. Current players:`, room.players.map(p => p.name));
   room.gameStarted = true;
   io.to(roomCode).emit("game-start", {});
   startTurn(roomCode);
@@ -78,6 +79,9 @@ const startTurn = (roomCode) => {
   if (room.drawerindex >= room.players.length) {
     room.drawerindex = 0;
   }
+  // reset word and set phase to choosing
+  room.word = null;
+  room.phase = "choosing";
   //notify frontend for starting turn with this user
   io.to(roomCode).emit("start-turn", room.players[room.drawerindex]);
   //word generator
@@ -160,6 +164,9 @@ io.on("connection", (socket) => {
       socket.emit("updated-players", room.players);
       if (room.gameStarted) {
         socket.emit("game-already-started", {});
+        const drawer = room.players[room.drawerindex];
+        const wl = room.word ? room.word.length : 0;
+        io.to(socket.id).emit("current-state", { phase: room.word ? "drawing" : "choosing", drawer, wordLen: wl });
       }
     }
 
@@ -191,9 +198,11 @@ io.on("connection", (socket) => {
     
     io.to(currentRoomCode).emit("updated-players", room.players);
     
-    if (room.players.length === 2 && !room.gameStarted) {
+    console.log(`Recieved user data for ${username} in room ${currentRoomCode}. Players in room: ${room.players.length}, Game started: ${room.gameStarted}`);
+    if (!room.gameStarted && room.players.length >= 2) {
+      console.log(`Attempting to start game in room ${currentRoomCode} with ${room.players.length} players.`);
       startGame(currentRoomCode);
-    } else if (room.players.length >= 2 && room.gameStarted) {
+    } else if (room.gameStarted) {
       socket.emit("game-already-started", {});
     }
   });
@@ -257,6 +266,7 @@ io.on("connection", (socket) => {
     if (!room) return;
 
     room.word = w;
+    room.phase = "drawing";
     let wl = w.length;
     io.to(currentRoomCode).emit("word-len", wl);
     startDraw(currentRoomCode);
@@ -288,12 +298,12 @@ io.on("connection", (socket) => {
     io.to(currentRoomCode).emit("updated-players", room.players);
     socket.to(currentRoomCode).emit("user-disconnected", {});
     
-    if (room.players.length <= 1 && room.gameStarted) {
+    if (room.players.length <= 0) {
+      cleanupRoom(currentRoomCode);
+    } else if (room.players.length === 1 && room.gameStarted) {
       stopGame(currentRoomCode);
     }
-    
-    // Cleanup empty rooms
-    cleanupRoom(currentRoomCode);
+
   });
 });
 
