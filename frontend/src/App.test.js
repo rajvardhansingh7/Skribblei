@@ -1,8 +1,35 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import App from './App';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+jest.mock('@dicebear/core', () => ({
+  createAvatar: () => ({
+    toString: () => '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+  }),
+}));
+
+jest.mock('@dicebear/collection', () => ({
+  openPeeps: {},
+  adventurer: {},
+  avataaars: {},
+  bigEars: {},
+  bigSmile: {},
+  bottts: {},
+  croodles: {},
+  funEmoji: {},
+  lorelei: {},
+  loreleiNeutral: {},
+  micah: {},
+  miniavs: {},
+  notionists: {},
+  personas: {},
+}));
+
+test('renders Skribblei home screen', () => {
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>
+  );
+  expect(screen.getByText(/Skribblei/i)).toBeInTheDocument();
 });

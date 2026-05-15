@@ -34,19 +34,25 @@ function PlayScreen() {
   const [copied, setCopied] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("en");
+  const [timerKey, setTimerKey] = useState(0);
   const navigate = useNavigate()
   const location = useLocation()
   const userDataRecieved = location.state || {};
-  // TODO: Set REACT_APP_API_URL in frontend/.env for production (HTTPS)
   const ENDPOINT = process.env.REACT_APP_API_URL;
   const SOCKET_OPTIONS = { path: "/socket.io", transports: ["websocket", "polling"], withCredentials: true };
+
+  const getSessionUser = () => ({
+    username: userDataRecieved.username || localStorage.getItem("username"),
+    avatar: userDataRecieved.avatar || localStorage.getItem("avatar"),
+    roomCode: userDataRecieved.roomCode || localStorage.getItem("roomCode"),
+    isHost: userDataRecieved.isHost === true || localStorage.getItem("isHost") === "true",
+    language: userDataRecieved.language || localStorage.getItem("language") || "en",
+  });
   
   useEffect(() => {
-    console.log("user Data received", userDataRecieved)
-    let us = localStorage.getItem("username");
-    let currentRoomCode = userDataRecieved.roomCode || localStorage.getItem("roomCode");
-    let isHost = userDataRecieved.isHost === true || localStorage.getItem("isHost") === "true";
-    let currentLanguage = userDataRecieved.language || localStorage.getItem("language") || "en";
+    const session = getSessionUser();
+    console.log("user Data received", session);
+    const { username, avatar, roomCode: currentRoomCode, isHost, language: currentLanguage } = session;
     
     if(currentRoomCode) {
       setRoomCode(currentRoomCode);
@@ -56,7 +62,7 @@ function PlayScreen() {
       setLanguage(currentLanguage);
     }
     
-    if(!us || !userDataRecieved.username || !userDataRecieved.avatar || !currentRoomCode){
+    if(!username || !avatar || !currentRoomCode){
       alert("Missing required information. Redirecting to home.");
       navigate("/")
       return;
@@ -112,12 +118,12 @@ function PlayScreen() {
   useEffect(()=>{
     if(socket){
       socket.on("send-user-data",()=>{
+        const session = getSessionUser();
         console.log("sending user data")
-        let userdata= {
-          username: userDataRecieved.username,
-          avatar: userDataRecieved.avatar
-        }
-        socket.emit("recieve-user-data",userdata)
+        socket.emit("recieve-user-data", {
+          username: session.username,
+          avatar: session.avatar,
+        });
       })
     }
 
@@ -254,7 +260,7 @@ function PlayScreen() {
         setSelectedWord(null);
         setShowClock(false);
         setCurrentUserDrawing(false);
-        setShowWords(player.id === socket.id);
+        setShowWords(socket ? player.id === socket.id : false);
       });
     }
     return () => {
@@ -277,6 +283,7 @@ function PlayScreen() {
         console.log("drawing started of", player);
         setShowWords(false);
         setShowClock(true);
+        setTimerKey((k) => k + 1);
         clearCanvasAfterTurn();
         if (player.id === socket.id) {
           console.log("your turn started");
@@ -563,7 +570,7 @@ function PlayScreen() {
       return;
     }
     console.log(inputMessage);
-    socket.emit("sending-chat", inputMessage.toLocaleLowerCase());
+    socket.emit("sending-chat", inputMessage.trim().toLowerCase());
     console.log("socekt in send msg:", socket.id);
     setInputMessage("");
   };
@@ -666,6 +673,7 @@ function PlayScreen() {
             currentUserDrawing={currentUserDrawing}
             selectedWord={selectedWord}
             darkMode={darkMode}
+            timerKey={timerKey}
           />
         </div>
         <div className="w-full flex justify-center items-center gap-10">
@@ -677,9 +685,9 @@ function PlayScreen() {
             {allPlayers &&
               allPlayers.map((pl, idx) => (
                 <PlayerCard
-                  key={idx}
+                  key={pl.id || idx}
                   pl={pl}
-                  curruser={pl.id === socket.id}
+                  curruser={socket ? pl.id === socket.id : false}
                   playerDrawing={playerDrawing}
                 />
               ))}
@@ -704,7 +712,7 @@ function PlayScreen() {
               }}
             />
             <div>
-              {showWords && playerDrawing && playerDrawing.id === socket.id && (
+              {showWords && playerDrawing && socket && playerDrawing.id === socket.id && (
                 <div className={`absolute top-0 left-0 h-full w-full flex justify-center gap-10 items-center z-10 rounded-lg transition-colors duration-300 ${
                   darkMode ? 'bg-gray-900 bg-opacity-95' : 'bg-white bg-opacity-90'
                 }`}>
@@ -723,7 +731,7 @@ function PlayScreen() {
                   ))}
                 </div>
               )}
-              {showWords && playerDrawing && playerDrawing.id !== socket.id && (
+              {showWords && playerDrawing && socket && playerDrawing.id !== socket.id && (
                 <div className={`absolute h-full w-full top-0 left-0 flex justify-center items-center z-10 rounded-lg transition-colors duration-300 ${
                   darkMode 
                     ? 'text-white bg-gray-900 bg-opacity-95' 

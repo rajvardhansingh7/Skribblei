@@ -87,6 +87,7 @@ const HomeScreen = () => {
     };
     console.log("User Data:", userData);
     localStorage.setItem("username", username);
+    localStorage.setItem("avatar", avatar);
     localStorage.setItem("roomCode", finalRoomCode);
     localStorage.setItem("isHost", isHost.toString());
     localStorage.setItem("language", language);

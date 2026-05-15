@@ -195,8 +195,14 @@ io.on("connection", (socket) => {
       points: 0,
       avatar: avatar
     };
-    
-    room.players.push(newUser);
+
+    const existingIndex = room.players.findIndex((p) => p.id === socket.id);
+    if (existingIndex >= 0) {
+      newUser.points = room.players[existingIndex].points;
+      room.players[existingIndex] = newUser;
+    } else {
+      room.players.push(newUser);
+    }
     console.log(`Player added to room ${currentRoomCode}:`, newUser);
     console.log(`Room ${currentRoomCode} now has ${room.players.length} players`);
     
@@ -311,13 +317,14 @@ io.on("connection", (socket) => {
   });
 });
 
-// Serve React build files
+// Serve React build files in production only
 const buildPath = path.join(__dirname, "..", "frontend", "build");
-app.use(express.static(buildPath));
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(buildPath, "index.html"));
-});
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(buildPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(buildPath, "index.html"));
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 

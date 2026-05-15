@@ -1,5 +1,5 @@
 import "./App.css";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import HomeScreen from "./views/HomeScreen";
 import PlayScreen from "./views/PlayScreen";
 import { useEffect } from "react";

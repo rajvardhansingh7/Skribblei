@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { CountdownCircleTimer } from 'react-countdown-circle-timer';
 import './WordBar.css'; // Import the CSS file for styling
 
-const UrgeWithPleasureComponent = () => (
+const UrgeWithPleasureComponent = ({ timerKey }) => (
   <CountdownCircleTimer
+    key={timerKey}
     isPlaying
     duration={60}
     size={80} // Set a suitable size for the clockx
@@ -24,7 +25,7 @@ const UrgeWithPleasureComponent = () => (
   </CountdownCircleTimer>
 );
 
-const WordBar = ({ showClock, wordLen, gameStarted, showWords, currentUserDrawing, selectedWord, darkMode = false }) => {
+const WordBar = ({ showClock, wordLen, gameStarted, showWords, currentUserDrawing, selectedWord, darkMode = false, timerKey = 0 }) => {
   const [key, setKey] = useState(0);
 
   const handleClockClick = () => {
@@ -66,7 +67,7 @@ const WordBar = ({ showClock, wordLen, gameStarted, showWords, currentUserDrawin
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           className="timer-button" // Add a class to the button
         >
-          <UrgeWithPleasureComponent />
+          <UrgeWithPleasureComponent timerKey={timerKey} />
         </button>
       )}
       <div style={{ 
