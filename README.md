@@ -4,7 +4,7 @@ Welcome to **Skribblei**, a fun and engaging online multiplayer drawing and gues
 
 ## Live Demo
 
-🎮 **[Play Skribblei Now](https://skribblei.onrender.com)**
+🎮 **[Play Skribblei Now](https://skribblei-1.onrender.com/)**
 
 > 💡 Open the link in **two separate tabs** to experience multiplayer mode (you'll be joined together).
 
